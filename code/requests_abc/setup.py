@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='requests-abc',
-    version='0.1.0',
+    version='0.4.0',
     description='requests-abc',
     url='https://github.com/JustIceQAQ/Introspection/tree/main/code/requests_abc',
     author='justiceqaq',
