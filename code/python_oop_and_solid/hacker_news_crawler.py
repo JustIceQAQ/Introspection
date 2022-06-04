@@ -1,19 +1,14 @@
 import dataclasses
 import io
 import sys
+from itertools import chain
 from typing import Iterable, List, TextIO, Optional
 
 import requests
 from bs4 import BeautifulSoup
 
-
-@dataclasses.dataclass
-class Article:
-    title: str
-    link: str
-    site: str
-    points: int
-    comments: int
+from code.python_oop_and_solid.filter import ArticleFilter, DefaultArticleFilter, GithubArticleFilter
+from code.python_oop_and_solid.models import Article
 
 
 class ArticleWriter:
@@ -32,26 +27,49 @@ class ArticleWriter:
 
 
 class HackerNewsCrawler:
-    root_url = 'https://news.ycombinator.com/'
+    root_url = 'https://news.ycombinator.com'
     filename = "Hacker_News"
 
-    def __init__(self, limit: int = 5):
+    def __init__(self, limit: int = 5, page: int = 1, article_filter: Optional[ArticleFilter] = None):
         self.limit = limit
+        self.page = page
+        self.article_filter = article_filter or DefaultArticleFilter()
 
     def fetch(self) -> Iterable[Article]:
-        response = requests.get(self.root_url)
-        formatted = BeautifulSoup(response.text, "html5lib")
-        raw_item_list = formatted.select("table.itemlist > tbody > tr")
-        item_list = self.clean_data(raw_item_list)
-        for item in item_list[:self.limit]:
-            # print(item)
+
+        item_list = list(chain.from_iterable([self.formatting(p) for p in range(1, self.page + 1)]))
+        counter = 0
+        for item in item_list:
+            if counter >= self.limit:
+                break
             title_link = item.select_one("a.titlelink")
             title = title_link.get_text()
             link = title_link["href"]
-            site = item.select_one("span.sitestr").get_text()
-            points = item.select_one("span.score").get_text().split(" ")[0].strip()
-            comments = item.select("a")[-1].get_text().split(" ")[0].strip()
-            yield Article(title=title, link=link, site=site, points=int(points), comments=int(comments))
+            site = (get_site.get_text()
+                    if (get_site := item.select_one("span.sitestr"))
+                    else "-")
+            points = check_points if (check_points := (get_points.get_text().split(" ")[0].strip()
+                                                       if (get_points := item.select_one("span.score"))
+                                                       else "0")
+                                      ).isnumeric() else 0
+
+            comments = check_comments if (check_comments := (get_comments.get_text().split(" ")[0].strip()
+                                                             if (get_comments := item.select("a")[-1])
+                                                             else "0")
+                                          ).isnumeric() else 0
+
+            article = Article(title=title, link=link, site=site, points=int(points), comments=int(comments))
+
+            if self.article_filter.validate(article):
+                counter += 1
+                yield article
+
+    def formatting(self, p):
+        response = requests.get(f"{self.root_url}/news?p={p}")
+        formatted = BeautifulSoup(response.text, "html5lib")
+        raw_item_list = formatted.select("table.itemlist > tbody > tr")
+        item_list = self.clean_data(raw_item_list)
+        return item_list
 
     def clean_data(self, raw_item_list):
         item_list = []
@@ -67,7 +85,7 @@ class HackerNewsCrawler:
 
 def show_the_hacker_news(fp: Optional[TextIO] = None):
     dest_fp = fp or sys.stdout
-    hacker_news_crawler = HackerNewsCrawler()
+    hacker_news_crawler = HackerNewsCrawler(page=1, article_filter=GithubArticleFilter())
     hacker_news_dataset = hacker_news_crawler.fetch()
     writer = ArticleWriter(dest_fp, hacker_news_crawler.filename)
     writer.write(list(hacker_news_dataset))
