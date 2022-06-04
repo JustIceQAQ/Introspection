@@ -1,5 +1,7 @@
 import dataclasses
-from typing import Iterable
+import io
+import sys
+from typing import Iterable, List, TextIO, Optional
 
 import requests
 from bs4 import BeautifulSoup
@@ -12,6 +14,21 @@ class Article:
     site: str
     points: int
     comments: int
+
+
+class ArticleWriter:
+    def __init__(self, fp: TextIO, title: str):
+        self.fp = fp
+        self.title = title
+
+    def write(self, articles: List[Article]):
+        self.fp.write(f'# {self.title}\n\n')
+        for i, article in enumerate(articles, 1):
+            self.fp.write(f'> TOP {i}: {article.title}\n')
+            self.fp.write(f'> site: {article.site}\n')
+            self.fp.write(f'> points：{article.points} comments：{article.comments}\n')
+            self.fp.write(f'> link：{article.link}\n')
+            self.fp.write('------\n')
 
 
 class HackerNewsCrawler:
@@ -48,12 +65,13 @@ class HackerNewsCrawler:
         return item_list
 
 
-def doing():
+def show_the_hacker_news(fp: Optional[TextIO] = None):
+    dest_fp = fp or sys.stdout
     hacker_news_crawler = HackerNewsCrawler()
     hacker_news_dataset = hacker_news_crawler.fetch()
-    for hacker_news_data in hacker_news_dataset:
-        print(hacker_news_data)
+    writer = ArticleWriter(dest_fp, hacker_news_crawler.filename)
+    writer.write(list(hacker_news_dataset))
 
 
 if __name__ == '__main__':
-    doing()
+    show_the_hacker_news()
