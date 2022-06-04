@@ -1,6 +1,7 @@
 import dataclasses
 import io
 import sys
+from collections import Counter
 from itertools import chain
 from typing import Iterable, List, TextIO, Optional
 
@@ -83,6 +84,26 @@ class HackerNewsCrawler:
         return item_list
 
 
+class HackerNewsSiteSourceGrouper:
+    def __init__(self, url: str, page: int = 5):
+        self.root_url = url
+        self.page = page
+
+    def get_groups(self):
+        elems = list(chain.from_iterable([self.formatting(p) for p in range(1, self.page + 1)]))
+
+        groups = Counter()
+        for elem in elems:
+            groups.update([elem.get_text()])
+        return groups
+
+    def formatting(self, p):
+        response = requests.get(f"{self.root_url}/news?p={p}")
+        formatted = BeautifulSoup(response.text, "html5lib")
+        raw_item_list = formatted.select("span.sitestr")
+        return raw_item_list
+
+
 def show_the_hacker_news(fp: Optional[TextIO] = None):
     dest_fp = fp or sys.stdout
     hacker_news_crawler = HackerNewsCrawler(page=1, article_filter=GithubArticleFilter())
@@ -92,4 +113,7 @@ def show_the_hacker_news(fp: Optional[TextIO] = None):
 
 
 if __name__ == '__main__':
-    show_the_hacker_news()
+    # show_the_hacker_news()
+    hacker_news_site_source_grouper = HackerNewsSiteSourceGrouper('https://news.ycombinator.com', page=5).get_groups()
+    for key, value in hacker_news_site_source_grouper.most_common(3):
+        print(f'Site: {key} | Count: {value}')
