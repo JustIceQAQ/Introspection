@@ -10,10 +10,10 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = "User"
 
-    id = Column("Id", Integer, primary_key=True, index=True)
-    email = Column("Email", String, unique=True, index=True)
-    hashed_password = Column("HashedPassword", String)
-    is_active = Column("IsActive", Boolean, default=True)
+    id = Column("Id", Integer, primary_key=True, index=True, comment="流水號", doc="QAQ")
+    email = Column("Email", String, unique=True, index=True, comment="電子郵件")
+    hashed_password = Column("HashedPassword", String, comment="Hash 後密碼")
+    is_active = Column("IsActive", Boolean, default=True, comment="是否啟用")
 
 
 class CommonBaseModel(BaseModel):
@@ -31,7 +31,7 @@ def main():
     parameter = {}
     cls_annotations = {}
     for column in User.__table__.columns._all_columns:
-        parameter[user_attr[column.key]] = Field(title=user_attr[column.key])
+        parameter[user_attr[column.key]] = Field(title=column.comment, description=column.doc)
         cls_annotations[user_attr[column.key]] = Optional[column.type.python_type]
 
     # parameter = {
