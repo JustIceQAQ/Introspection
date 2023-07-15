@@ -1,5 +1,5 @@
 # Introspection
-Introspection  
+Introspection   
 
 - Generalization
     - 一般化
