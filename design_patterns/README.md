@@ -6,4 +6,5 @@
 
 ----
 
-- 
+- Observer/Observable
+- State
