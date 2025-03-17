@@ -1,5 +1,8 @@
-from design_patterns.state.base import Stats
-from design_patterns.state.water.stste import SolidState, LinearState, GasState, SupercriticalFluidState
+from design_patterns.state.base import Stats, Contest
+from design_patterns.state.water.stste import (
+    SolidState, LinearState, GasState, SupercriticalFluidState,
+    SolidStateV2, LinearStateV2, GasStateV2, SupercriticalFluidStateV2
+)
 
 
 class Water:
@@ -42,7 +45,18 @@ class Water:
             self._change_state(GasState())
 
 
-if __name__ == "__main__":
+class WaterV2(Contest):
+    def __init__(self, ):
+        super().__init__(state_info=25, cur_state=LinearStateV2("液態"))
+        self.add_state(SolidStateV2("固態"))
+        self.add_state(LinearStateV2("液態"))
+        self.add_state(GasStateV2("氣態"))
+        self.add_state(SupercriticalFluidStateV2("超臨界流體"))
+
+    def change_environment(self, temperature: int, atmospheric: int | None = 1):
+        self.set_state_info(temperature)
+
+def main_1():
     water = Water()
     print(water.get_environment())
 
@@ -50,3 +64,13 @@ if __name__ == "__main__":
     water.change_environment(50)
     water.change_environment(150)
     water.change_environment(400, 30)
+
+def main_2():
+    water = WaterV2()
+    water.change_environment(-30)
+    water.change_environment(60)
+    water.change_environment(101)
+    water.change_environment(400)
+
+if __name__ == "__main__":
+    main_2()
