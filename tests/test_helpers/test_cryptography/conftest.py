@@ -37,4 +37,10 @@ def a_pair_keys():
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
+    with open("../../../../../#CO-OP/cteetisa_backend/certificate/private_key.pem", "wb") as f:
+        f.write(private_key_pem)
+
+    # 儲存公鑰
+    with open("../../../../../#CO-OP/cteetisa_backend/certificate/public_key.pem", "wb") as f:
+        f.write(public_key_pem)
     return private_key_pem, public_key_pem

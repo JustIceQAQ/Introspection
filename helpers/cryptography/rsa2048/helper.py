@@ -92,3 +92,58 @@ class RSA2048Cipher(CipherBase):
             pass
 
         return result_text
+
+    def _signer(self, message: str | bytes) -> str:
+        if not self.private_key:
+            raise ValueError("You not set private_key")
+        runtime_msg = message.encode("utf-8") if isinstance(message, str) else message
+        signature = self.private_key.sign(
+            runtime_msg,
+            padding.PSS(
+                mgf=self._mgf(self._hashes()),
+                salt_length=padding.PSS.MAX_LENGTH,
+            ),
+            self._hashes(),
+        )
+        return base64.b64encode(signature).decode()
+
+    def signer(self, message: str | bytes, auto_error: bool = True) -> str | None:
+        return (
+            self._signer(message)
+            if auto_error
+            else self._try_error_protect(self._signer, message)
+        )
+
+    def _verifier(self, message: str | bytes, signature: str | bytes) -> bool:
+        if not self.public_key:
+            raise ValueError("You not set public_key")
+        runtime_msg = message.encode("utf-8") if isinstance(message, str) else message
+        runtime_sig = (
+            base64.b64decode(signature) if isinstance(signature, str) else signature
+        )
+
+        self.public_key.verify(
+            runtime_sig,
+            runtime_msg,
+            padding.PSS(
+                mgf=self._mgf(self._hashes()),
+                salt_length=padding.PSS.MAX_LENGTH,
+            ),
+            self._hashes(),
+        )
+        return True
+
+    def verifier(
+            self, message: str | bytes, signature: str | bytes, auto_error: bool = True
+    ) -> bool:
+        def safe_verify(msg_sig):
+            try:
+                return self._verifier(*msg_sig)
+            except Exception:  # nosec
+                return False
+
+        return (
+            self._verifier(message, signature)
+            if auto_error
+            else safe_verify((message, signature))
+        )

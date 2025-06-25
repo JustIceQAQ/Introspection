@@ -6,6 +6,7 @@ def test_aes256_cbc_import():
 def test_aes256_cbc_encrypter(original_plaintext, a_pair_keys):
     from helpers.cryptography.rsa2048 import RSA2048Cipher
     private_key_pem, public_key_pem = a_pair_keys
+
     rsa2048_cipher = RSA2048Cipher(public_key_pem, private_key_pem)
     ciphertext = rsa2048_cipher.encrypter(original_plaintext)
     assert ciphertext != original_plaintext
