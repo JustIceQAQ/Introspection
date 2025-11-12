@@ -9,10 +9,10 @@ jobs:
     strategy:
       matrix:
         range:
-          - { start: 0, end: 10 }
-          - { start: 10, end: 20 }
-          - { start: 20, end: 30 }
-          - { start: 30, end: 40 }
+          - { start: 1, end: 2 }
+          - { start: 2, end: 3 }
+          - { start: 3, end: 4 }
+          - { start: 4, end: 5 }
     steps:
       - uses: actions/checkout@v4
 
@@ -43,6 +43,7 @@ jobs:
 
       - name: Merge JSON results
         run: |
+          rm -r data/*.json
           echo "Merging results..."
           python - <<'EOF'
           import json, glob, os
@@ -62,6 +63,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/all_results.json
+          git add data/*.json
           git commit -m "Update merged crawler results" || echo "No changes to commit"
           git push
