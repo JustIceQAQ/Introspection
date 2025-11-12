@@ -43,22 +43,9 @@ jobs:
 
       - name: Merge JSON results
         run: |
-          rm -r data/*.json
-          echo "Merging results..."
-          python - <<'EOF'
-          import json, glob, os
-          files = sorted(glob.glob("data/**/*.json", recursive=True))
-          merged = []
-          for f in files:
-              with open(f, encoding="utf-8") as fp:
-                  data = json.load(fp)
-                  merged.extend(data)
-          os.makedirs("data", exist_ok=True)
-          with open("data/all_results.json", "w", encoding="utf-8") as f:
-              json.dump(merged, f, ensure_ascii=False, indent=2)
-          print(f"Merged {len(files)} files into data/all_results.json")
-          EOF
-
+          rm -r ./data/*.json
+          ll
+          ll ./data
       - name: Commit and push merged results
         run: |
           git config user.name "github-actions[bot]"
