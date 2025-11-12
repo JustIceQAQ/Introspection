@@ -2,6 +2,9 @@ name: Test Parallel Crawlers
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - "main"
 
 jobs:
   crawl:
@@ -36,6 +39,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Merge JSON results
+        run: |
+          rm -r data/*.json
+
       - name: Download all partial results
         uses: actions/download-artifact@v4
         with:
@@ -43,9 +50,18 @@ jobs:
 
       - name: Merge JSON results
         run: |
-          rm -r ./data/*.json
-          ll
-          ll ./data
+          echo "Merging results..."
+          python - <<'EOF'
+          import json, glob, os
+          files = sorted(glob.glob("data/**/*.json", recursive=True))
+          merged = []
+          for f in files:
+              with open(f, encoding="utf-8") as fp:
+                  data = json.load(fp)
+                  merged.extend(data)
+          os.makedirs("data", exist_ok=True)
+          EOF
+
       - name: Commit and push merged results
         run: |
           git config user.name "github-actions[bot]"
