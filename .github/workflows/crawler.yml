@@ -1,0 +1,67 @@
+name: Test Parallel Crawlers
+
+on:
+  workflow_dispatch:
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        range:
+          - { start: 0, end: 10 }
+          - { start: 10, end: 20 }
+          - { start: 20, end: 30 }
+          - { start: 30, end: 40 }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run partial crawler
+        run: |
+          python main.py \
+          --start ${{ matrix.range.start }} \
+          --end ${{ matrix.range.end }}
+      - name: Upload partial results
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-${{ matrix.range.start }}-${{ matrix.range.end }}
+          path: data/*.json
+  merge-results:
+    runs-on: ubuntu-latest
+    needs: crawl
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all partial results
+        uses: actions/download-artifact@v4
+        with:
+          path: data/
+
+      - name: Merge JSON results
+        run: |
+          echo "Merging results..."
+          python - <<'EOF'
+          import json, glob, os
+          files = sorted(glob.glob("data/**/*.json", recursive=True))
+          merged = []
+          for f in files:
+              with open(f, encoding="utf-8") as fp:
+                  data = json.load(fp)
+                  merged.extend(data)
+          os.makedirs("data", exist_ok=True)
+          with open("data/all_results.json", "w", encoding="utf-8") as f:
+              json.dump(merged, f, ensure_ascii=False, indent=2)
+          print(f"Merged {len(files)} files into data/all_results.json")
+          EOF
+
+      - name: Commit and push merged results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/all_results.json
+          git commit -m "Update merged crawler results" || echo "No changes to commit"
+          git push
