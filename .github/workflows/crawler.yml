@@ -2,7 +2,9 @@ name: Test Parallel Crawlers
 
 on:
   workflow_dispatch:
-
+  pull_request:
+    branches:
+      - "main"
 jobs:
   crawl:
     runs-on: ubuntu-latest
